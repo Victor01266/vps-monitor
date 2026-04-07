@@ -1,0 +1,6 @@
+# Regras do Projeto VPS Monitor
+# activation: always_on
+
+- Toda manipulação de firewall deve usar caminhos absolutos para binários (ex: /sbin/iptables).
+- Logs de segurança capturados devem ser sanitizados antes de exibidos no dashboard.
+- O painel deve usar componentes de estado em tempo real (WebSockets).

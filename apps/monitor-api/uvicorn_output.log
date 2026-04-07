@@ -1,0 +1,9 @@
+INFO:     Will watch for changes in these directories: ['C:\\Users\\victor.oliveira\\Documents\\IAs\\Windsurf\\Monitor\\apps\\monitor-api']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [13412] using WatchFiles
+INFO:     Started server process [25624]
+INFO:     Waiting for application startup.
+2026-04-06 17:14:18,387 [INFO] app.log_watcher: Log watcher iniciado.
+INFO:     Application startup complete.
+2026-04-06 17:14:18,485 [WARNING] app.log_watcher: Log watcher local desabilitado no Windows (tail -F indisponÝvel). Logs sÒo monitorados via SSH na VPS.
+WARNING:  WatchFiles detected changes in 'app\routers\security.py'. Reloading...

@@ -1,0 +1,51 @@
+# ── Scripts de diagnóstico/deploy temporários ──
+check_*.py
+debug_*.py
+diagnose.py
+fix_*.py
+push_*.py
+deploy_*.py
+redeploy_*.py
+final_deploy.py
+run_scan.py
+setup_vps.py
+verify_deploy.py
+revert_vps_deploy.py
+
+# ── Screenshots ──
+screenshots/
+
+# ── Dependências Node ──
+node_modules/
+apps/monitor-dashboard/.next/
+apps/monitor-dashboard/out/
+
+# ── Python ──
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# ── Variáveis de ambiente ──
+.env
+.env.local
+.env*.local
+
+# ── IDEs ──
+.vscode/
+.idea/
+
+# ── Windsurf/AI internos ──
+.windsurf/
+.agents/
+.claude/
+.kiro/
+skills/
+skills-lock.json
+mcp-vps-server/
+mcp-config-vps.json
+
+# ── OS ──
+.DS_Store
+Thumbs.db

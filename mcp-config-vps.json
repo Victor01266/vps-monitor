@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "vps-monitor": {
+      "command": "ssh",
+      "args": [
+        "-p",
+        "2222",
+        "root@72.60.158.84",
+        "node",
+        "/root/mcp-vps-server/index.js"
+      ],
+      "env": {
+        "SSH_AUTH_SOCK": ""
+      }
+    }
+  }
+}
