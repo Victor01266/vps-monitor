@@ -4,7 +4,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from app.routers import stats, security, firewall, static
+from app.routers import stats, security, firewall, static, auth
 from app.websocket_manager import manager
 from app.log_watcher import start_watcher, stop_watcher
 
@@ -38,6 +38,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
 app.include_router(stats.router)
 app.include_router(security.router)
 app.include_router(firewall.router)
