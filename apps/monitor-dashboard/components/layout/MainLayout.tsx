@@ -16,6 +16,7 @@ import {
   ShieldAlert,
   X,
   Menu,
+  LayoutDashboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ShieldLogo } from "@/components/ui/ShieldLogo";
@@ -23,7 +24,7 @@ import { Badge } from "@/components/ui/Badge";
 import { useWebSocket } from "@/hooks/useWebSocket";
 
 const sidebarItems = [
-  { label: "Dashboard", icon: ShieldLogo, href: "/" },
+  { label: "Dashboard", icon: LayoutDashboard, href: "/" },
   { label: "Serviços", icon: Server, href: "/services" },
   { label: "Firewall", icon: Shield, href: "/firewall" },
   { label: "Segurança", icon: Lock, href: "/security" },
