@@ -142,7 +142,7 @@ async def get_attacks_daily(days: int = 30):
         cmd = (
             "(cat /var/log/auth.log 2>/dev/null; "
             " cat /var/log/auth.log.1 2>/dev/null; "
-            " zcat /var/log/auth.log.{2..12}.gz 2>/dev/null) | "
+            " find /var/log -maxdepth 1 -name 'auth.log.*.gz' 2>/dev/null | sort | xargs zcat 2>/dev/null) | "
             "grep -E 'Failed password|Invalid user|Connection closed by invalid user'"
         )
         stdout, _ = run_remote(cmd)
@@ -197,6 +197,33 @@ async def get_attacks_daily(days: int = 30):
         return {"days": days, "data": result}
     except Exception as e:
         logger.error(f"Erro em /security/attacks/daily: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/attacks/count")
+async def get_attacks_count():
+    """
+    Retorna o total histórico de tentativas de ataque em todos os logs rotacionados.
+    Não tem limite de dias — lê auth.log, auth.log.1 e todos os .gz disponíveis.
+    """
+    try:
+        cmd = (
+            "(cat /var/log/auth.log 2>/dev/null; "
+            " cat /var/log/auth.log.1 2>/dev/null; "
+            " find /var/log -maxdepth 1 -name 'auth.log.*.gz' 2>/dev/null | sort | xargs zcat 2>/dev/null) | "
+            "grep -cE 'Failed password|Invalid user|Connection closed by invalid user' || echo 0"
+        )
+        stdout, _ = run_remote(cmd)
+        total = 0
+        for line in stdout.strip().splitlines():
+            try:
+                total = int(line.strip())
+                break
+            except ValueError:
+                pass
+        return {"total": total}
+    except Exception as e:
+        logger.error(f"Erro em /security/attacks/count: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -1,5 +1,9 @@
+import base64
 import json
 import logging
+import re
+from collections import defaultdict
+from datetime import date, datetime, timedelta
 from fastapi import APIRouter, HTTPException
 from app.ssh_client import run_remote
 from app.config import INFRA_MAP_PATH
@@ -123,6 +127,238 @@ async def get_weekly_accesses():
     except Exception as e:
         logger.error(f"Erro em /stats/weekly-accesses: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/attacks/daily")
+async def get_attacks_daily(days: int = 30):
+    """
+    Retorna contagem diária de tentativas de ataque (brute_force + invalid_user).
+    Lê auth.log atual + rotacionados para cobrir até `days` dias.
+    """
+    if days > 90:
+        days = 90
+    try:
+        cmd = (
+            "(cat /var/log/auth.log 2>/dev/null; "
+            " cat /var/log/auth.log.1 2>/dev/null; "
+            " find /var/log -maxdepth 1 -name 'auth.log.*.gz' 2>/dev/null | sort | xargs zcat 2>/dev/null) | "
+            "grep -E 'Failed password|Invalid user|Connection closed by invalid user'"
+        )
+        stdout, _ = run_remote(cmd)
+
+        daily: dict[str, dict[str, int]] = defaultdict(lambda: {"brute": 0, "invalid": 0})
+
+        for line in stdout.splitlines():
+            m_iso = re.match(r"^(\d{4}-\d{2}-\d{2})", line)
+            m_trad = re.match(r"^([A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})", line)
+
+            date_str: str | None = None
+            if m_iso:
+                date_str = m_iso.group(1)
+            elif m_trad:
+                try:
+                    raw = re.sub(r"\s+", " ", m_trad.group(1).strip())
+                    parsed = datetime.strptime(
+                        f"{raw} {datetime.now().year}", "%b %d %H:%M:%S %Y"
+                    )
+                    date_str = parsed.strftime("%Y-%m-%d")
+                except ValueError:
+                    pass
+
+            if not date_str:
+                continue
+
+            if "Failed password" in line:
+                daily[date_str]["brute"] += 1
+            else:
+                daily[date_str]["invalid"] += 1
+
+        today = date.today()
+        cutoff = today - timedelta(days=days)
+
+        result = []
+        for i in range(days + 1):
+            d = (cutoff + timedelta(days=i)).isoformat()
+            v = daily.get(d, {"brute": 0, "invalid": 0})
+            result.append({
+                "date": d,
+                "brute": v["brute"],
+                "invalid": v["invalid"],
+                "total": v["brute"] + v["invalid"],
+            })
+
+        return {"days": days, "data": result}
+    except Exception as e:
+        logger.error(f"Erro em /stats/attacks/daily: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/attacks/count")
+async def get_attacks_count():
+    """
+    Retorna o total histórico de tentativas de ataque em todos os logs rotacionados.
+    """
+    try:
+        cmd = (
+            "(cat /var/log/auth.log 2>/dev/null; "
+            " cat /var/log/auth.log.1 2>/dev/null; "
+            " find /var/log -maxdepth 1 -name 'auth.log.*.gz' 2>/dev/null | sort | xargs zcat 2>/dev/null) | "
+            "grep -cE 'Failed password|Invalid user|Connection closed by invalid user' || echo 0"
+        )
+        stdout, _ = run_remote(cmd)
+        total = 0
+        for line in stdout.strip().splitlines():
+            try:
+                total = int(line.strip())
+                break
+            except ValueError:
+                pass
+        return {"total": total}
+    except Exception as e:
+        logger.error(f"Erro em /stats/attacks/count: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/active-sessions")
+async def get_active_sessions():
+    """Retorna número de sessões SSH ativas no momento via ss."""
+    try:
+        stdout, _ = run_remote(
+            "ss -tnp state established '( dport = :22 or sport = :22 )' 2>/dev/null | "
+            "grep -c ESTAB || echo 0"
+        )
+        count = 0
+        for line in stdout.strip().splitlines():
+            try:
+                count = int(line.strip())
+                break
+            except ValueError:
+                pass
+        return {"active_sessions": count}
+    except Exception as e:
+        logger.error(f"Erro em /stats/active-sessions: {e}")
+        return {"active_sessions": 0}
+
+
+@router.get("/service-accesses")
+async def get_service_accesses():
+    """Retorna acessos por serviço parseando JWT do nginx access.log."""
+    try:
+        domain_map = {
+            "cadascred.diagonalit.com.br": "cadascredito",
+            "cobrabot.diagonalit.com.br": "cobrabot", 
+            "glpi.diagonalit.com.br": "glpi",
+            "evo.diagonalit.com.br": "evolution",
+            "evolution.diagonalit.com.br": "evolution",
+            "n8n.diagonalit.com.br": "n8n",
+            "metas.diagonalit.com.br": "ranking_vendas",
+            "chat.diagonalit.com.br": "chat",
+            "monitor.diagonalit.com.br": "monitor"
+        }
+        
+        # Ler access.log atual + rotacionados
+        cmd = (
+            "(cat /var/log/nginx/access.log 2>/dev/null; "
+            " cat /var/log/nginx/access.log.1 2>/dev/null; "
+            " find /var/log -maxdepth 1 -name 'access.log.*.gz' 2>/dev/null | sort | xargs zcat 2>/dev/null) | "
+            "grep '/api/auth/verify' | tail -5000"
+        )
+        stdout, _ = run_remote(cmd)
+        service_data: dict[str, dict] = {}
+        now = datetime.now()
+        
+        for line in stdout.splitlines():
+            # Parse nginx log: IP - - [timestamp] "GET /api/auth/verify HTTP/1.1" 200 "referer?token=JWT" ...
+            match = re.search(r'^(\S+).*\[([^\]]+)\].*GET /api/auth/verify', line)
+            if not match:
+                continue
+                
+            ip, timestamp_str = match.groups()
+            
+            # Extrair token do referer
+            token_match = re.search(r'token=([^&\s]+)', line)
+            token = token_match.group(1) if token_match else ""
+            
+            # Extrair domínio do referer
+            ref_match = re.search(r'"https?://([^/]+)', line)
+            referer = ref_match.group(1) if ref_match else ""
+            service_name = "unknown"
+            
+            for domain, name in domain_map.items():
+                if domain in referer:
+                    service_name = name
+                    break
+            
+            # Decodificar JWT payload (sem verificação de assinatura)
+            try:
+                # Adicionar padding se necessário
+                padded = token + '=' * (-len(token) % 4)
+                payload_bytes = base64.b64decode(padded.split('.')[1] + '==')
+                payload = json.loads(payload_bytes.decode())
+                username = payload.get('username', 'unknown')
+            except (ValueError, KeyError, IndexError, json.JSONDecodeError):
+                continue
+            
+            # Parse timestamp
+            try:
+                timestamp = datetime.strptime(timestamp_str.split()[0], '%d/%b/%Y:%H:%M:%S')
+            except ValueError:
+                continue
+            
+            # Inicializar serviço se não existir
+            if service_name not in service_data:
+                service_data[service_name] = {
+                    'users': {},
+                    'recent_ips': set(),
+                    'last_access': None,
+                    'weekly_count': 0
+                }
+            
+            service = service_data[service_name]
+            
+            # Contar acessos semanais
+            if timestamp > now - timedelta(days=7):
+                service['weekly_count'] += 1
+                
+                # Contar por usuário
+                if username not in service['users']:
+                    service['users'][username] = {'count': 0, 'last_access': None}
+                service['users'][username]['count'] += 1
+                if not service['users'][username]['last_access'] or timestamp > service['users'][username]['last_access']:
+                    service['users'][username]['last_access'] = timestamp.isoformat()
+            
+            # Acessos recentes (últimos 5 min)
+            if timestamp > now - timedelta(minutes=5):
+                service['recent_ips'].add(ip)
+            
+            # Último acesso geral
+            if not service['last_access'] or timestamp > datetime.fromisoformat(service['last_access']):  # type: ignore[arg-type]
+                service['last_access'] = timestamp.isoformat()
+        
+        # Formatar resposta
+        result = {}
+        for service, data in service_data.items():
+            users_list = []
+            for username, user_data in data['users'].items():
+                users_list.append({
+                    'username': username,
+                    'weekly_accesses': user_data['count'],
+                    'last_access': user_data['last_access']
+                })
+            
+            result[service] = {
+                'users': sorted(users_list, key=lambda x: x['weekly_accesses'], reverse=True)[:10],
+                'active_now': len(data['recent_ips']),
+                'simultaneous_now': len(data['recent_ips']),
+                'weekly_total': data['weekly_count'],
+                'last_access': data['last_access']
+            }
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Erro em /stats/service-accesses: {e}")
+        return {}
 
 
 @router.get("/overview")
