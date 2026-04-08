@@ -54,7 +54,7 @@ def _check_virtual_services() -> list:
                 "state": "running" if is_up else "exited",
                 "virtual": True,
             })
-        except Exception as e:
+        except Exception:
             results.append({
                 "name": svc["name"],
                 "image": svc["image"],
