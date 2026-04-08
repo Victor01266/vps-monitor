@@ -1,0 +1,228 @@
+@import "tailwindcss";
+
+/* ── Dashdark template tokens ────────────────────────────── */
+:root {
+  --background: #081028;
+  --surface: #0b1739;
+  --surface-2: #0a1330;
+  --foreground: #ffffff;
+  --foreground-muted: #aeb9e1;
+
+  --accent: #cb3cff;
+  --accent-2: #00c2ff;
+  --accent-glow: rgba(203, 60, 255, 0.38);
+  --accent-glow-2: rgba(0, 194, 255, 0.22);
+
+  --gradient: linear-gradient(135deg, #cb3cff 20%, #7f25fb 68%);
+  --gradient-text: linear-gradient(135deg, #cb3cff 0%, #9f45ff 55%, #00c2ff 100%);
+  --gradient-border: linear-gradient(135deg, rgba(203, 60, 255, 0.38), rgba(0, 194, 255, 0.22));
+  --gradient-neon: linear-gradient(90deg, #cb3cff, #7f25fb, #00c2ff, #cb3cff);
+
+  --danger:  #ef4444;
+  --warning: #f59e0b;
+  --success: #10b981;
+  --cyan:    #06b6d4;
+  --muted:   #2d3a5c;
+
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+* { box-sizing: border-box; }
+
+html { color-scheme: dark; }
+
+body {
+  background: var(--background);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 15% -10%, rgba(203, 60, 255, 0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 60% at 85% 110%, rgba(0, 194, 255, 0.08) 0%, transparent 60%);
+  background-attachment: fixed;
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+.font-data {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+/* ── Gradient Text ───────────────────────────────────────── */
+.text-gradient {
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Glass ───────────────────────────────────────────────── */
+.glass {
+  background: rgba(11, 23, 57, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid #343b4f;
+}
+
+.glass-danger {
+  background: rgba(30, 8, 8, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.glass-success {
+  background: rgba(5, 25, 18, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.glass-warning {
+  background: rgba(28, 18, 4, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+/* ── Card gradient border wrapper ───────────────────────── */
+.card-glow {
+  position: relative;
+}
+.card-glow::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: calc(var(--radius) + 1px);
+  background: var(--gradient-border);
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.35s;
+}
+.card-glow:hover::before { opacity: 1; }
+
+/* ── Neon streak decorativo (light trails do NEXUX) ─────── */
+.neon-streak {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.18;
+}
+
+/* ── Glow shadows ────────────────────────────────────────── */
+.glow-accent {
+  box-shadow:
+    0 0 20px var(--accent-glow),
+    0 0 60px rgba(59, 91, 252, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.glow-danger {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+/* ── Usage bars ──────────────────────────────────────────── */
+.usage-bar {
+  height: 3px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+  margin-top: 6px;
+}
+.usage-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.6s ease;
+}
+.usage-ok   { background: linear-gradient(90deg, #cb3cff, #00c2ff); }
+.usage-warn { background: #f59e0b; }
+.usage-crit { background: #ef4444; }
+
+/* ── Navbar pill ─────────────────────────────────────────── */
+.navbar-pill {
+  background: rgba(11, 23, 57, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid #343b4f;
+  box-shadow:
+    0 4px 32px rgba(1, 5, 17, 0.45),
+    0 0 0 1px rgba(203, 60, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* ── Gradient button ─────────────────────────────────────── */
+.btn-gradient {
+  background: var(--gradient);
+  color: #fff;
+  border: none;
+  position: relative;
+  overflow: hidden;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+.btn-gradient:hover { opacity: 0.88; box-shadow: 0 0 28px var(--accent-glow); }
+.btn-gradient:active { transform: scale(0.97); }
+
+/* Outline pill (estilo CTA secundário do NEXUX) */
+.btn-outline-pill {
+  background: transparent;
+  color: var(--foreground);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 9999px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.btn-outline-pill:hover {
+  border-color: rgba(108,141,255,0.5);
+  background: rgba(59,91,252,0.08);
+}
+
+/* ── Stat number ─────────────────────────────────────────── */
+.stat-number {
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+.text-accent { color: var(--accent-2); }
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: rgba(15, 15, 15, 0.6); }
+::-webkit-scrollbar-thumb {
+  background: rgba(59, 91, 252, 0.3);
+  border-radius: 2px;
+}
+
+/* ── Animations ──────────────────────────────────────────── */
+.pulse-dot { animation: pulse-dot 2s infinite; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.4); }
+}
+
+.threat-enter { animation: threat-enter 0.3s ease-out; }
+
+@keyframes threat-enter {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.stat-enter { animation: stat-enter 0.4s ease-out both; }
+
+@keyframes stat-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in { animation: fade-in 0.5s ease-out both; }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
