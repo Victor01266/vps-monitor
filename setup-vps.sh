@@ -24,7 +24,7 @@ npm install -g pm2 --silent
 # ── Clonar repositório ─────────────────────────
 echo "→ Clonando repositório..."
 if [ -d "$INSTALL_DIR" ]; then
-    cd "$INSTALL_DIR" && git pull origin main
+    cd "$INSTALL_DIR" && git pull origin master
 else
     git clone "$REPO_URL" "$INSTALL_DIR"
     cd "$INSTALL_DIR"
