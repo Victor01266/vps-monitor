@@ -1,5 +1,7 @@
 import re
 import logging
+from collections import defaultdict
+from datetime import date, datetime, timedelta
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, field_validator
 from app.ssh_client import run_remote
@@ -147,9 +149,6 @@ async def get_attacks_daily(days: int = 30):
         )
         stdout, _ = run_remote(cmd)
 
-        from collections import defaultdict
-        import datetime
-
         daily: dict[str, dict[str, int]] = defaultdict(lambda: {"brute": 0, "invalid": 0})
 
         for line in stdout.splitlines():
@@ -164,8 +163,8 @@ async def get_attacks_daily(days: int = 30):
             elif m_trad:
                 try:
                     raw = re.sub(r"\s+", " ", m_trad.group(1).strip())
-                    parsed = datetime.datetime.strptime(
-                        f"{raw} {datetime.datetime.now().year}", "%b %d %H:%M:%S %Y"
+                    parsed = datetime.strptime(
+                        f"{raw} {datetime.now().year}", "%b %d %H:%M:%S %Y"
                     )
                     date_str = parsed.strftime("%Y-%m-%d")
                 except ValueError:
@@ -179,13 +178,12 @@ async def get_attacks_daily(days: int = 30):
             else:
                 daily[date_str]["invalid"] += 1
 
-        today = datetime.date.today()
-        cutoff = today - datetime.timedelta(days=days)
+        today = date.today()
+        cutoff = today - timedelta(days=days)
 
-        # Preenche todos os dias do período com zeros (inclusive os sem ataques)
         result = []
         for i in range(days + 1):
-            d = (cutoff + datetime.timedelta(days=i)).isoformat()
+            d = (cutoff + timedelta(days=i)).isoformat()
             v = daily.get(d, {"brute": 0, "invalid": 0})
             result.append({
                 "date": d,

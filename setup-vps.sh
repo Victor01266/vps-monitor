@@ -79,11 +79,11 @@ EOF
 
 npm run build
 
-pm2 start npm --name "monitor-dashboard" -- start -- -p 3000
+pm2 start npm --name "monitor-dashboard" -- start -- -p 4000
 pm2 save
 pm2 startup systemd -u root --hp /root | tail -1 | bash
 
-echo "  ✓ Dashboard rodando em 127.0.0.1:3000"
+echo "  ✓ Dashboard rodando em 127.0.0.1:4000"
 
 # ── Nginx ──────────────────────────────────────
 echo "→ Configurando Nginx..."

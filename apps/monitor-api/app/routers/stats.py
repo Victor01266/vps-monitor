@@ -2,8 +2,7 @@ import base64
 import json
 import logging
 import re
-from collections import defaultdict
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException
 from app.ssh_client import run_remote
 from app.config import INFRA_MAP_PATH
@@ -126,96 +125,6 @@ async def get_weekly_accesses():
         return result
     except Exception as e:
         logger.error(f"Erro em /stats/weekly-accesses: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/attacks/daily")
-async def get_attacks_daily(days: int = 30):
-    """
-    Retorna contagem diária de tentativas de ataque (brute_force + invalid_user).
-    Lê auth.log atual + rotacionados para cobrir até `days` dias.
-    """
-    if days > 90:
-        days = 90
-    try:
-        cmd = (
-            "(cat /var/log/auth.log 2>/dev/null; "
-            " cat /var/log/auth.log.1 2>/dev/null; "
-            " find /var/log -maxdepth 1 -name 'auth.log.*.gz' 2>/dev/null | sort | xargs zcat 2>/dev/null) | "
-            "grep -E 'Failed password|Invalid user|Connection closed by invalid user'"
-        )
-        stdout, _ = run_remote(cmd)
-
-        daily: dict[str, dict[str, int]] = defaultdict(lambda: {"brute": 0, "invalid": 0})
-
-        for line in stdout.splitlines():
-            m_iso = re.match(r"^(\d{4}-\d{2}-\d{2})", line)
-            m_trad = re.match(r"^([A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})", line)
-
-            date_str: str | None = None
-            if m_iso:
-                date_str = m_iso.group(1)
-            elif m_trad:
-                try:
-                    raw = re.sub(r"\s+", " ", m_trad.group(1).strip())
-                    parsed = datetime.strptime(
-                        f"{raw} {datetime.now().year}", "%b %d %H:%M:%S %Y"
-                    )
-                    date_str = parsed.strftime("%Y-%m-%d")
-                except ValueError:
-                    pass
-
-            if not date_str:
-                continue
-
-            if "Failed password" in line:
-                daily[date_str]["brute"] += 1
-            else:
-                daily[date_str]["invalid"] += 1
-
-        today = date.today()
-        cutoff = today - timedelta(days=days)
-
-        result = []
-        for i in range(days + 1):
-            d = (cutoff + timedelta(days=i)).isoformat()
-            v = daily.get(d, {"brute": 0, "invalid": 0})
-            result.append({
-                "date": d,
-                "brute": v["brute"],
-                "invalid": v["invalid"],
-                "total": v["brute"] + v["invalid"],
-            })
-
-        return {"days": days, "data": result}
-    except Exception as e:
-        logger.error(f"Erro em /stats/attacks/daily: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/attacks/count")
-async def get_attacks_count():
-    """
-    Retorna o total histórico de tentativas de ataque em todos os logs rotacionados.
-    """
-    try:
-        cmd = (
-            "(cat /var/log/auth.log 2>/dev/null; "
-            " cat /var/log/auth.log.1 2>/dev/null; "
-            " find /var/log -maxdepth 1 -name 'auth.log.*.gz' 2>/dev/null | sort | xargs zcat 2>/dev/null) | "
-            "grep -cE 'Failed password|Invalid user|Connection closed by invalid user' || echo 0"
-        )
-        stdout, _ = run_remote(cmd)
-        total = 0
-        for line in stdout.strip().splitlines():
-            try:
-                total = int(line.strip())
-                break
-            except ValueError:
-                pass
-        return {"total": total}
-    except Exception as e:
-        logger.error(f"Erro em /stats/attacks/count: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
