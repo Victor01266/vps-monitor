@@ -79,7 +79,7 @@ jobs:
 
             echo "→ Building dashboard..."
             cd apps/monitor-dashboard
-            rm -rf .next
+            [ -d .next ] && rm -rf .next || true
             npm ci --silent
             npm run build
             cd ../..
