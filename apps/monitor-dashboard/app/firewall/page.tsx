@@ -34,9 +34,9 @@ const ACTION_META: Record<string, { color: string; bg: string; border: string; I
 };
 
 const ADD_ACTION_META = {
-  deny:   { color: "#ef4444", label: "Negar"   },
-  allow:  { color: "#10b981", label: "Permitir"  },
-  reject: { color: "#ef4444", label: "Rejeitar" },
+  deny:   { color: "#ef4444", label: "Negar",    title: "Bloqueia silenciosamente" },
+  allow:  { color: "#10b981", label: "Permitir",  title: "Libera o tráfego" },
+  reject: { color: "#ef4444", label: "Rejeitar", title: "Bloqueia com resposta" },
 };
 
 function DirectionBadge({ direction }: { direction: string }) {
@@ -243,20 +243,19 @@ export default function FirewallPage() {
               {(["deny", "allow", "reject"] as const).map((a) => {
                 const m = ADD_ACTION_META[a];
                 const sel = newAction === a;
-                const labels: Record<string, string> = { deny: "Negar", allow: "Permitir", reject: "Rejeitar" };
                 return (
                   <button
                     key={a}
                     onClick={() => setNewAction(a)}
                     className="px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer"
-                    title={a === "deny" ? "Bloqueia silenciosamente" : a === "allow" ? "Libera o tráfego" : "Bloqueia com resposta"}
+                    title={m.title}
                     style={{
                       background: sel ? `${m.color}20` : "var(--surface-2)",
                       border: `1px solid ${sel ? m.color + "60" : "#343B4F"}`,
                       color: sel ? m.color : "var(--foreground-muted)",
                     }}
                   >
-                    {labels[a]}
+                    {m.label}
                   </button>
                 );
               })}
