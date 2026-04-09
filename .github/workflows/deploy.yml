@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [master]
 
+concurrency:
+  group: vps-deploy
+  cancel-in-progress: false
+
 jobs:
   # ── Etapa 1: Testes e Build ──────────────────────────────────────
   test:
