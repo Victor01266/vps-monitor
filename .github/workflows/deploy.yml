@@ -86,6 +86,8 @@ jobs:
 
             echo "→ Restarting services..."
             systemctl restart monitor-api
-            pm2 reload monitor-dashboard --update-env
+            pm2 delete monitor-dashboard || true
+            pm2 start npm --name monitor-dashboard --cwd /opt/monitor/apps/monitor-dashboard -- start -- -p 4000
+            pm2 save
 
             echo "→ Deploy concluído com sucesso!"
