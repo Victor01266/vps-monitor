@@ -7,7 +7,7 @@ import { fetchUFWRules, addUFWRule, deleteUFWRule } from "@/lib/api";
 import {
   ShieldCheck, ShieldOff, Plus, Trash2,
   RefreshCw, Shield, Search, ArrowRight, ArrowLeft,
-  ArrowLeftRight, Copy, Check, Layers,
+  ArrowLeftRight, Copy, Check, Layers, Network,
 } from "lucide-react";
 
 interface UFWRule {
@@ -60,6 +60,45 @@ function DirectionBadge({ direction }: { direction: string }) {
     </span>
   );
   return <span className="font-data text-[10px]" style={{ color: "var(--foreground-muted)" }}>{direction}</span>;
+}
+
+// Mapeia portas para serviços conhecidos
+function getServiceExample(target: string): string | null {
+  const portMatch = target.match(/^(\d+)(\/\w+)?$/);
+  if (!portMatch) return null;
+  
+  const port = parseInt(portMatch[1]);
+  const serviceMap: Record<number, string> = {
+    20: "FTP (dados)",
+    21: "FTP (controle)",
+    22: "SSH",
+    23: "Telnet",
+    25: "SMTP (email)",
+    53: "DNS",
+    80: "HTTP (web)",
+    110: "POP3 (email)",
+    143: "IMAP (email)",
+    443: "HTTPS (web seguro)",
+    465: "SMTPS (email seguro)",
+    587: "SMTP (submissão)",
+    993: "IMAPS (email seguro)",
+    995: "POP3S (email seguro)",
+    3306: "MySQL",
+    5432: "PostgreSQL",
+    6379: "Redis",
+    8080: "HTTP alternativo",
+    8443: "HTTPS alternativo",
+    3000: "Node.js dev",
+    3001: "React dev",
+    4000: "Next.js",
+    5000: "Flask/Django",
+    8000: "Django/FastAPI",
+    8001: "FastAPI",
+    9000: "PHP-FPM",
+    27017: "MongoDB",
+  };
+  
+  return serviceMap[port] || null;
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -325,6 +364,7 @@ export default function FirewallPage() {
                   <th className="text-left py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)", width: 40 }}>#</th>
                   <th className="text-left py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)" }}>Destino</th>
                   <th className="text-left py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)" }}>Origem</th>
+                  <th className="text-left py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)", width: 140 }}>Serviço</th>
                   <th className="text-center py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)", width: 100 }}>Direção</th>
                   <th className="text-center py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)", width: 110 }}>Ação</th>
                   <th className="py-3 px-4" style={{ width: 120 }} />
@@ -364,6 +404,19 @@ export default function FirewallPage() {
                           <CopyButton text={rule.from} />
                         </span>
                       </td>
+                      <td className="py-3 px-4 text-xs" style={{ color: "var(--foreground-muted)" }}>
+                        {(() => {
+                          const service = getServiceExample(rule.to);
+                          return service ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              <Network size={11} style={{ color: "#00c2ff", flexShrink: 0 }} />
+                              <span title={`Porta ${rule.to}`}>{service}</span>
+                            </span>
+                          ) : (
+                            <span style={{ opacity: 0.4 }}>—</span>
+                          );
+                        })()}
+                      </td>
                       <td className="py-3 px-4 text-center">
                         <DirectionBadge direction={rule.direction} />
                       </td>
@@ -374,6 +427,7 @@ export default function FirewallPage() {
                           style={{
                             background: meta.bg, border: `1px solid ${meta.border}`,
                             borderRadius: 20, padding: "3px 9px", color: meta.color,
+                            minWidth: 90,
                           }}
                         >
                           <meta.Icon size={10} />
@@ -419,7 +473,7 @@ export default function FirewallPage() {
                 })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-sm" style={{ color: "var(--foreground-muted)" }}>
+                    <td colSpan={7} className="py-12 text-center text-sm" style={{ color: "var(--foreground-muted)" }}>
                       {!ufwData ? "Carregando regras..." : search ? `Nenhuma regra encontrada para "${search}".` : "Nenhuma regra UFW encontrada."}
                     </td>
                   </tr>
