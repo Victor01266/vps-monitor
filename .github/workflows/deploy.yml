@@ -83,9 +83,9 @@ jobs:
 
             echo "→ Building dashboard..."
             cd apps/monitor-dashboard
-            [ -d .next ] && rm -rf .next || true
             npm ci --silent
-            npm run build
+            NODE_OPTIONS="--max-old-space-size=512" npm run build
+            [ -d .next.old ] && rm -rf .next.old || true
             cd ../..
 
             echo "→ Restarting services..."
