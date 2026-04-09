@@ -18,7 +18,6 @@ import {
   Menu,
   LayoutDashboard,
 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
 import { ShieldLogo } from "@/components/ui/ShieldLogo";
 import { Badge } from "@/components/ui/Badge";
 import { useWebSocket } from "@/hooks/useWebSocket";
@@ -69,8 +68,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#081028] text-white">
-      <div className="flex min-h-screen">
+    <div className="h-screen overflow-hidden bg-[#081028] text-white">
+      <div className="flex h-full">
         {/* Mobile sidebar overlay */}
         {sidebarOpen && (
           <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setSidebarOpen(false)}>
@@ -212,7 +211,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Content */}
-        <div className="flex-1 min-w-0 flex flex-col">
+        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           <header className="sticky top-0 z-20 bg-[#081028]/95 backdrop-blur border-b border-[#0B1739] px-4 md:px-8 py-4">
             <div className="w-full mx-auto flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -307,7 +306,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </div>
           </header>
 
-          <main className="flex-1 w-full mx-auto px-4 md:px-8 py-6">
+          <main className="flex-1 min-h-0 overflow-y-auto w-full mx-auto px-4 md:px-8 py-6">
             {children}
           </main>
         </div>

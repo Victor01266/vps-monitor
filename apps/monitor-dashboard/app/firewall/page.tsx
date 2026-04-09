@@ -154,7 +154,7 @@ export default function FirewallPage() {
 
   return (
     <MainLayout>
-      <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 140px)", gap: 20 }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 20 }}>
 
         {/* ── Header ─────────────────────────────────────────── */}
         <div className="flex items-start justify-between gap-4 flex-wrap" style={{ flexShrink: 0 }}>
