@@ -7,6 +7,7 @@ export function ShieldLogo({ size = 28, className }: { size?: number; className?
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      style={{ display: 'block', flexShrink: 0 }}
     >
       <rect width="32" height="32" rx="7" fill="#0B1739" />
       <path
