@@ -225,6 +225,45 @@ async def get_attacks_count():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/attacks/top-all")
+async def get_top_attackers_all(limit: int = 10):
+    """
+    Retorna o ranking de IPs ofensores de TODO o histórico disponível.
+    Lê auth.log atual + rotacionados (auth.log.1 e .gz).
+    """
+    if limit > 50:
+        limit = 50
+    try:
+        cmd = (
+            "(cat /var/log/auth.log 2>/dev/null; "
+            " cat /var/log/auth.log.1 2>/dev/null; "
+            " find /var/log -maxdepth 1 -name 'auth.log.*.gz' 2>/dev/null | sort | xargs zcat 2>/dev/null) | "
+            "grep -E 'Failed password|Invalid user|Connection closed by invalid user' | "
+            "grep -oE 'from [0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+' | "
+            "awk '{print $2}' | sort | uniq -c | sort -rn"
+        )
+        stdout, _ = run_remote(cmd)
+
+        top = []
+        for line in stdout.strip().splitlines():
+            parts = line.strip().split()
+            if len(parts) == 2:
+                count_str, ip = parts
+                try:
+                    count = int(count_str)
+                    if re.match(r"^\d{1,3}(\.\d{1,3}){3}$", ip):
+                        top.append({"ip": _sanitize(ip), "attempts": count})
+                except ValueError:
+                    pass
+            if len(top) >= limit:
+                break
+
+        return {"top_attackers": top, "total_ips": len(top)}
+    except Exception as e:
+        logger.error(f"Erro em /security/attacks/top-all: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 class UnbanRequest(BaseModel):
     jail: str
     ip: str

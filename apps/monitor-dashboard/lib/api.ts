@@ -65,6 +65,13 @@ export function fetchAttacksCount() {
   ) as Promise<{ total: number }>;
 }
 
+export function fetchTopAttackersAll(limit = 10) {
+  return withCache(`top-all-${limit}`, 300000, () =>
+    fetch(`${getApiBase()}/security/attacks/top-all?limit=${limit}`, { cache: "no-store" })
+      .then((r) => { if (!r.ok) throw new Error("Falha ao buscar top atacantes histórico"); return r.json(); })
+  ) as Promise<{ top_attackers: { ip: string; attempts: number }[]; total_ips: number }>;
+}
+
 export function fetchActiveSessions() {
   return withCache("active-sessions", 15000, () =>
     fetch(`${getApiBase()}/stats/active-sessions`, { cache: "no-store" }).then((r) => r.ok ? r.json() : { active_sessions: 0 })
