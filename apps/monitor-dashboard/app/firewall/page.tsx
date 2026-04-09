@@ -7,7 +7,7 @@ import { fetchUFWRules, addUFWRule, deleteUFWRule } from "@/lib/api";
 import {
   ShieldCheck, ShieldOff, Plus, Trash2,
   RefreshCw, Shield, Search, ArrowRight, ArrowLeft,
-  ArrowLeftRight, Copy, Check, Layers, Network,
+  ArrowLeftRight, Copy, Check, Layers, Network, FolderOpen,
 } from "lucide-react";
 
 interface UFWRule {
@@ -66,39 +66,52 @@ function DirectionBadge({ direction }: { direction: string }) {
 function getServiceExample(target: string): string | null {
   const portMatch = target.match(/^(\d+)(\/\w+)?$/);
   if (!portMatch) return null;
-  
   const port = parseInt(portMatch[1]);
   const serviceMap: Record<number, string> = {
-    20: "FTP (dados)",
-    21: "FTP (controle)",
-    22: "SSH",
-    23: "Telnet",
-    25: "SMTP (email)",
-    53: "DNS",
-    80: "HTTP (web)",
-    110: "POP3 (email)",
-    143: "IMAP (email)",
-    443: "HTTPS (web seguro)",
-    465: "SMTPS (email seguro)",
-    587: "SMTP (submissão)",
-    993: "IMAPS (email seguro)",
-    995: "POP3S (email seguro)",
-    3306: "MySQL",
-    5432: "PostgreSQL",
-    6379: "Redis",
-    8080: "HTTP alternativo",
-    8443: "HTTPS alternativo",
-    3000: "Node.js dev",
-    3001: "React dev",
-    4000: "Next.js",
-    5000: "Flask/Django",
-    8000: "Django/FastAPI",
-    8001: "FastAPI",
-    9000: "PHP-FPM",
+    20: "FTP (dados)",    21: "FTP (controle)",
+    22: "SSH",            23: "Telnet",
+    25: "SMTP",           53: "DNS",
+    80: "HTTP",           110: "POP3",
+    143: "IMAP",          443: "HTTPS",
+    465: "SMTPS",         587: "SMTP envio",
+    993: "IMAPS",         995: "POP3S",
+    3306: "MySQL",        5432: "PostgreSQL",
+    6379: "Redis",        8080: "HTTP alt.",
+    8443: "HTTPS alt.",   3000: "Node.js",
+    3001: "React dev",    4000: "Next.js",
+    5000: "Flask",        8000: "FastAPI",
+    8001: "FastAPI",      9000: "PHP-FPM",
     27017: "MongoDB",
   };
-  
   return serviceMap[port] || null;
+}
+
+// Mapeia portas para projetos típicos em /opt
+function getProjectExample(target: string): { name: string; path: string } | null {
+  const portMatch = target.match(/^(\d+)(\/\w+)?$/);
+  if (!portMatch) return null;
+  const port = parseInt(portMatch[1]);
+  const projectMap: Record<number, { name: string; path: string }> = {
+    22:    { name: "Acesso remoto SSH",       path: "/etc/ssh" },
+    80:    { name: "Site institucional",       path: "/opt/site" },
+    443:   { name: "Painel web (HTTPS)",       path: "/opt/painel" },
+    3306:  { name: "Banco de dados app",       path: "/var/lib/mysql" },
+    5432:  { name: "Banco de dados principal", path: "/var/lib/postgresql" },
+    6379:  { name: "Cache de sessões",         path: "/var/lib/redis" },
+    3000:  { name: "Frontend React",           path: "/opt/frontend" },
+    3001:  { name: "App secundária",           path: "/opt/app-secondary" },
+    4000:  { name: "Dashboard monitor",        path: "/opt/monitor" },
+    5000:  { name: "Serviço de notificações",  path: "/opt/notifier" },
+    8000:  { name: "API principal",            path: "/opt/api" },
+    8001:  { name: "Ranking de vendas",        path: "/opt/ranking" },
+    8080:  { name: "Proxy / Admin",            path: "/opt/admin" },
+    8443:  { name: "Painel administrativo",    path: "/opt/admin-panel" },
+    9000:  { name: "Processador de arquivos",  path: "/opt/processor" },
+    27017: { name: "Logs e métricas (NoSQL)",  path: "/opt/analytics" },
+    25:    { name: "Servidor de e-mail",       path: "/etc/postfix" },
+    53:    { name: "Resolução DNS",            path: "/etc/bind" },
+  };
+  return projectMap[port] || null;
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -358,16 +371,27 @@ export default function FirewallPage() {
               ))}
             </div>
           ) : (
-            <table className="w-full text-sm" style={{ minWidth: 600 }}>
+            <table className="w-full text-sm" style={{ minWidth: 820, tableLayout: "fixed" }}>
+              <colgroup>
+                <col style={{ width: "4%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "14%" }} />
+                <col style={{ width: "18%" }} />
+                <col style={{ width: "10%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "8%" }} />
+              </colgroup>
               <thead style={{ position: "sticky", top: 0, zIndex: 2, background: "var(--surface-2)" }}>
                 <tr style={{ borderBottom: "1px solid #343B4F" }}>
-                  <th className="text-left py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)", width: 40 }}>#</th>
+                  <th className="text-left py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)" }}>#</th>
                   <th className="text-left py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)" }}>Destino</th>
                   <th className="text-left py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)" }}>Origem</th>
-                  <th className="text-left py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)", width: 140 }}>Serviço</th>
-                  <th className="text-center py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)", width: 100 }}>Direção</th>
-                  <th className="text-center py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)", width: 110 }}>Ação</th>
-                  <th className="py-3 px-4" style={{ width: 120 }} />
+                  <th className="text-left py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)" }}>Serviço</th>
+                  <th className="text-left py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)" }}>Projeto</th>
+                  <th className="text-center py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)" }}>Direção</th>
+                  <th className="text-center py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)" }}>Ação</th>
+                  <th className="py-3 px-4" />
                 </tr>
               </thead>
               <tbody style={{ background: "var(--surface)" }}>
@@ -408,10 +432,26 @@ export default function FirewallPage() {
                         {(() => {
                           const service = getServiceExample(rule.to);
                           return service ? (
-                            <span className="inline-flex items-center gap-1.5">
+                            <span className="inline-flex items-center gap-1.5 truncate">
                               <Network size={11} style={{ color: "#00c2ff", flexShrink: 0 }} />
-                              <span title={`Porta ${rule.to}`}>{service}</span>
+                              <span className="truncate">{service}</span>
                             </span>
+                          ) : (
+                            <span style={{ opacity: 0.4 }}>—</span>
+                          );
+                        })()}
+                      </td>
+                      <td className="py-3 px-4 text-xs" style={{ color: "var(--foreground-muted)" }}>
+                        {(() => {
+                          const project = getProjectExample(rule.to);
+                          return project ? (
+                            <div className="flex flex-col gap-0.5 min-w-0">
+                              <span className="inline-flex items-center gap-1.5 truncate">
+                                <FolderOpen size={11} style={{ color: "#cb3cff", flexShrink: 0 }} />
+                                <span className="truncate font-medium" style={{ color: "#e2e8f0" }}>{project.name}</span>
+                              </span>
+                              <span className="font-data truncate" style={{ fontSize: 9, opacity: 0.45, paddingLeft: 16 }}>{project.path}</span>
+                            </div>
                           ) : (
                             <span style={{ opacity: 0.4 }}>—</span>
                           );
@@ -473,7 +513,7 @@ export default function FirewallPage() {
                 })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-sm" style={{ color: "var(--foreground-muted)" }}>
+                    <td colSpan={8} className="py-12 text-center text-sm" style={{ color: "var(--foreground-muted)" }}>
                       {!ufwData ? "Carregando regras..." : search ? `Nenhuma regra encontrada para "${search}".` : "Nenhuma regra UFW encontrada."}
                     </td>
                   </tr>
