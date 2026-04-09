@@ -26,34 +26,37 @@ interface UFWData {
 
 type RuleFilter = "all" | "allow" | "deny";
 
-const ACTION_META: Record<string, { color: string; bg: string; border: string; Icon: React.ElementType; label: string }> = {
-  ALLOW:  { color: "#10b981", bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.30)",  Icon: ShieldCheck, label: "ALLOW"  },
-  DENY:   { color: "#ef4444", bg: "rgba(239,68,68,0.12)",   border: "rgba(239,68,68,0.30)",   Icon: ShieldOff,   label: "DENY"   },
-  REJECT: { color: "#ef4444", bg: "rgba(239,68,68,0.12)",   border: "rgba(239,68,68,0.30)",   Icon: ShieldOff,   label: "REJECT" },
-  LIMIT:  { color: "#f59e0b", bg: "rgba(245,158,11,0.12)",  border: "rgba(245,158,11,0.30)",  Icon: Shield,      label: "LIMIT"  },
+const ACTION_META: Record<string, { color: string; bg: string; border: string; Icon: React.ElementType; label: string; title: string }> = {
+  ALLOW:  { color: "#10b981", bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.30)",  Icon: ShieldCheck, label: "Permitir",  title: "Libera o tráfego"  },
+  DENY:   { color: "#ef4444", bg: "rgba(239,68,68,0.12)",   border: "rgba(239,68,68,0.30)",   Icon: ShieldOff,   label: "Negar",    title: "Bloqueia silenciosamente" },
+  REJECT: { color: "#ef4444", bg: "rgba(239,68,68,0.12)",   border: "rgba(239,68,68,0.30)",   Icon: ShieldOff,   label: "Rejeitar", title: "Bloqueia com resposta" },
+  LIMIT:  { color: "#f59e0b", bg: "rgba(245,158,11,0.12)",  border: "rgba(245,158,11,0.30)",  Icon: Shield,      label: "Limitar",  title: "Limita conexões" },
 };
 
 const ADD_ACTION_META = {
-  deny:   { color: "#ef4444", label: "DENY"   },
-  allow:  { color: "#10b981", label: "ALLOW"  },
-  reject: { color: "#ef4444", label: "REJECT" },
+  deny:   { color: "#ef4444", label: "Negar"   },
+  allow:  { color: "#10b981", label: "Permitir"  },
+  reject: { color: "#ef4444", label: "Rejeitar" },
 };
 
 function DirectionBadge({ direction }: { direction: string }) {
   const d = direction.toUpperCase();
   if (d.includes("IN") && d.includes("OUT")) return (
-    <span className="inline-flex items-center gap-1 font-data text-[10px]" style={{ color: "#00c2ff" }}>
-      <ArrowLeftRight size={10} /> IN/OUT
+    <span className="inline-flex items-center gap-1.5 font-data text-[10px] font-semibold" style={{ color: "#00c2ff" }}>
+      <ArrowLeftRight size={11} />
+      <span title="Entrada e Saída">Entrada/Saída</span>
     </span>
   );
   if (d.includes("IN")) return (
-    <span className="inline-flex items-center gap-1 font-data text-[10px]" style={{ color: "#00c2ff" }}>
-      <ArrowRight size={10} /> IN
+    <span className="inline-flex items-center gap-1.5 font-data text-[10px] font-semibold" style={{ color: "#00c2ff" }}>
+      <ArrowRight size={11} />
+      <span title="Tráfego chegando">Entrada</span>
     </span>
   );
   if (d.includes("OUT")) return (
-    <span className="inline-flex items-center gap-1 font-data text-[10px]" style={{ color: "#8b5cf6" }}>
-      <ArrowLeft size={10} /> OUT
+    <span className="inline-flex items-center gap-1.5 font-data text-[10px] font-semibold" style={{ color: "#8b5cf6" }}>
+      <ArrowLeft size={11} />
+      <span title="Tráfego saindo">Saída</span>
     </span>
   );
   return <span className="font-data text-[10px]" style={{ color: "var(--foreground-muted)" }}>{direction}</span>;
@@ -81,8 +84,8 @@ function CopyButton({ text }: { text: string }) {
 
 const FILTERS: { id: RuleFilter; label: string }[] = [
   { id: "all",   label: "Todas" },
-  { id: "allow", label: "Allow" },
-  { id: "deny",  label: "Deny / Reject" },
+  { id: "allow", label: "Permitir" },
+  { id: "deny",  label: "Bloquear" },
 ];
 
 export default function FirewallPage() {
@@ -147,9 +150,9 @@ export default function FirewallPage() {
 
   const summaryStats = [
     { label: "Total", value: totalCount, color: "#AEB9E1", Icon: Layers },
-    { label: "Allow", value: allowCount, color: "#10b981", Icon: ShieldCheck },
-    { label: "Deny", value: denyCount,   color: "#ef4444", Icon: ShieldOff  },
-    { label: "Limit", value: limitCount, color: "#f59e0b", Icon: Shield     },
+    { label: "Permitir", value: allowCount, color: "#10b981", Icon: ShieldCheck },
+    { label: "Bloquear", value: denyCount,   color: "#ef4444", Icon: ShieldOff  },
+    { label: "Limitar", value: limitCount, color: "#f59e0b", Icon: Shield     },
   ];
 
   return (
@@ -240,18 +243,20 @@ export default function FirewallPage() {
               {(["deny", "allow", "reject"] as const).map((a) => {
                 const m = ADD_ACTION_META[a];
                 const sel = newAction === a;
+                const labels: Record<string, string> = { deny: "Negar", allow: "Permitir", reject: "Rejeitar" };
                 return (
                   <button
                     key={a}
                     onClick={() => setNewAction(a)}
                     className="px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer"
+                    title={a === "deny" ? "Bloqueia silenciosamente" : a === "allow" ? "Libera o tráfego" : "Bloqueia com resposta"}
                     style={{
                       background: sel ? `${m.color}20` : "var(--surface-2)",
                       border: `1px solid ${sel ? m.color + "60" : "#343B4F"}`,
                       color: sel ? m.color : "var(--foreground-muted)",
                     }}
                   >
-                    {m.label}
+                    {labels[a]}
                   </button>
                 );
               })}
@@ -287,11 +292,9 @@ export default function FirewallPage() {
                 }}
               >
                 {label}
-                {filterCounts[id] > 0 && (
-                  <span className="ml-1.5 font-data text-xs" style={{ opacity: active ? 0.8 : 0.5 }}>
-                    {filterCounts[id]}
-                  </span>
-                )}
+                <span className="ml-1.5 font-data text-xs" style={{ opacity: active ? 0.8 : 0.5 }}>
+                  ({filterCounts[id]})
+                </span>
               </button>
             );
           })}
@@ -302,7 +305,7 @@ export default function FirewallPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Filtrar por IP ou porta..."
+              placeholder="IP ou porta..."
               className="bg-transparent text-xs text-white placeholder-[#AEB9E1]/40 focus:outline-none font-data w-40"
             />
           </div>
@@ -323,8 +326,8 @@ export default function FirewallPage() {
                   <th className="text-left py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)", width: 40 }}>#</th>
                   <th className="text-left py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)" }}>Destino</th>
                   <th className="text-left py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)" }}>Origem</th>
-                  <th className="text-left py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)", width: 80 }}>Direção</th>
-                  <th className="text-left py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)", width: 100 }}>Ação</th>
+                  <th className="text-center py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)", width: 100 }}>Direção</th>
+                  <th className="text-center py-3 px-4 font-data text-xs uppercase tracking-wider" style={{ color: "var(--foreground-muted)", width: 110 }}>Ação</th>
                   <th className="py-3 px-4" style={{ width: 120 }} />
                 </tr>
               </thead>
@@ -362,12 +365,13 @@ export default function FirewallPage() {
                           <CopyButton text={rule.from} />
                         </span>
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4 text-center">
                         <DirectionBadge direction={rule.direction} />
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4 text-center">
                         <span
                           className="inline-flex items-center gap-1.5 font-data text-xs font-semibold"
+                          title={meta.title}
                           style={{
                             background: meta.bg, border: `1px solid ${meta.border}`,
                             borderRadius: 20, padding: "3px 9px", color: meta.color,
